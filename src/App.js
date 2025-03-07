@@ -34,7 +34,7 @@ function App() {
   const audioFeedbackInterval = 30000; // 30 seconds
 
   const [postureFeedback, setPostureFeedback] = useState('');
-  const [exerciseMode, setExerciseMode] = useState('posture'); // 'posture', 'pelvictilt', or 'bridging'
+  const [exerciseMode, setExerciseMode] = useState('posture'); // 'posture', 'mckenzie', or 'bridging'
   const [repCount, setRepCount] = useState(0);
   const [exerciseState, setExerciseState] = useState('start'); // 'start', 'hold', 'return'
   const [holdTimer, setHoldTimer] = useState(0);
@@ -119,37 +119,59 @@ function App() {
     return feedback.join(". ");
   }
 
-  function calculatePelvicTiltAccuracy(landmarks) {
+  function calculateMcKenzieAccuracy(landmarks) {
     if (!landmarks) return null;
 
     let feedback = [];
     
-    // Get hip and lower back landmarks
-    const leftHip = landmarks[23];
-    const rightHip = landmarks[24];
-    const midHip = {
-      x: (leftHip.x + rightHip.x) / 2,
-      y: (leftHip.y + rightHip.y) / 2
+    // Get relevant landmarks
+    const shoulders = {
+      x: (landmarks[11].x + landmarks[12].x) / 2,
+      y: (landmarks[11].y + landmarks[12].y) / 2
+    };
+    const hips = {
+      x: (landmarks[23].x + landmarks[24].x) / 2,
+      y: (landmarks[23].y + landmarks[24].y) / 2
     };
     
-    // Calculate pelvic angle
-    const pelvicAngle = Math.atan2(landmarks[24].y - landmarks[23].y, landmarks[24].x - landmarks[23].x);
-    
-    // Check if lying flat
-    if (Math.abs(pelvicAngle) > 0.1) {
-      feedback.push("Lie flat on your back with knees bent");
+    // Check if lying prone (on stomach)
+    if (shoulders.y < hips.y) {
+      feedback.push("Lie face down on your stomach");
+      return feedback.join(". ");
     }
     
-    // Check if pelvis is tilted correctly
-    const lowerSpineAngle = Math.abs(Math.atan2(landmarks[23].y - landmarks[11].y, landmarks[23].x - landmarks[11].x));
-    if (lowerSpineAngle > 0.2) {
-      feedback.push("Tilt your pelvis to flatten your lower back against the floor");
+    // Check elbow position for proper press-up
+    const elbowAngle = Math.abs(Math.atan2(
+      landmarks[14].y - landmarks[12].y,
+      landmarks[14].x - landmarks[12].x
+    ));
+    
+    // Check upper body elevation
+    const upperBodyElevation = shoulders.y - hips.y;
+    
+    // Check if arms are straight in press-up
+    if (elbowAngle > 0.3) {
+      feedback.push("Straighten your arms to push up your upper body");
     }
     
-    // Check if knees are bent properly
-    const kneeAngle = Math.abs(Math.atan2(landmarks[26].y - landmarks[24].y, landmarks[26].x - landmarks[24].x));
-    if (kneeAngle < 0.5) {
-      feedback.push("Bend your knees more");
+    // Check if lifted high enough
+    if (upperBodyElevation > -0.2) {
+      feedback.push("Push up your chest higher");
+    }
+    
+    // Check if hips are staying on the ground
+    const hipLevel = Math.abs(landmarks[23].y - landmarks[24].y);
+    if (hipLevel > 0.05) {
+      feedback.push("Keep your hips flat on the ground");
+    }
+    
+    // Check if neck is in neutral position
+    const neckAngle = Math.abs(Math.atan2(
+      landmarks[0].y - shoulders.y,
+      landmarks[0].x - shoulders.x
+    ));
+    if (neckAngle > 0.3) {
+      feedback.push("Keep your neck neutral, look down at the floor");
     }
 
     return feedback.join(". ");
@@ -192,24 +214,25 @@ function App() {
 
   function getExerciseInstructions() {
     const instructions = {
-      pelvictilt: {
-        title: "Pelvic Tilt Exercise",
-        description: "This exercise helps strengthen your lower back and core muscles, reducing PIVD pain.",
+      mckenzie: {
+        title: "McKenzie Press-Up Exercise",
+        description: "This exercise helps centralize pain and reduce disc pressure in PIVD, promoting disc rehydration and healing.",
         steps: [
-          "Lie on your back on a firm surface",
-          "Bend your knees and keep feet flat on the floor, hip-width apart",
-          "Keep arms relaxed at your sides, palms down",
-          "Breathe in deeply",
-          "As you exhale, gently tilt your pelvis by pressing your lower back into the floor",
-          "Hold this position for 3 seconds while breathing normally",
-          "Slowly release and return to the starting position",
+          "Lie face down on a firm surface",
+          "Place your hands palm down under your shoulders",
+          "Keep your hips and legs relaxed on the ground",
+          "Gradually push up with your arms, lifting your upper body",
+          "Keep your hips and lower body relaxed on the floor",
+          "Hold the position at the top for 3 seconds",
+          "Slowly lower back down",
           "Rest for 2 seconds before the next repetition"
         ],
         tips: [
-          "Don't arch your back",
-          "Keep your buttocks relaxed",
-          "Avoid lifting your hips off the floor",
-          "Perform 10 repetitions, 3 times daily"
+          "Don't force the movement if it causes pain",
+          "Keep your neck in a neutral position",
+          "Breathe normally throughout the exercise",
+          "Start with 10 repetitions, 3-4 times daily",
+          "Stop if you feel increased leg pain or numbness"
         ]
       },
       bridging: {
@@ -255,63 +278,73 @@ function App() {
     postureRef.current = null;
     changeStyleProperty("--btn-color","rgba(0, 105, 237, 1)"); //make the calibrate button solid
 
-    canvasRef.current.width = webcamRef.current.video.videoWidth
-    canvasRef.current.height = webcamRef.current.video.videoHeight
+    canvasRef.current.width = webcamRef.current.video.videoWidth;
+    canvasRef.current.height = webcamRef.current.video.videoHeight;
 
     const canvasElement = canvasRef.current;
-    const canvasCtx = canvasElement.getContext("2d");  //canvas context
+    const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     
     canvasCtx.globalCompositeOperation = 'source-over';
-    drawConnectors(canvasCtx, results.poseLandmarks, mediapipePose.POSE_CONNECTIONS,
-                   {color: '#fff'/*'#00FF00'*/, lineWidth: 4});
-    drawLandmarks(canvasCtx, results.poseLandmarks,
-                  {color: '#fff'/*'#FF0000'*/, lineWidth: 2});
-    canvasCtx.restore();
+    
+    let connectionColor = '#00FF00'; // Default green
+    let landmarkColor = '#00FF00';
 
-    // Handle different exercise modes
-    switch(exerciseMode) {
-      case 'pelvictilt':
-        const pelvicTiltFeedback = calculatePelvicTiltAccuracy(landmarks);
-        if (!pelvicTiltFeedback) {
-          setHoldTimer(prev => prev + 1);
-          if (holdTimer > 90) { // 3 seconds hold
-            setRepCount(prev => prev + 1);
-            setHoldTimer(0);
-            speakFeedback("Good rep! Relax and prepare for next tilt");
-          }
+    // Determine color based on exercise mode and feedback
+    if (exerciseMode === 'mckenzie') {
+      const mckenzieFeedback = calculateMcKenzieAccuracy(landmarks);
+      connectionColor = mckenzieFeedback ? '#FF0000' : '#00FF00';
+      landmarkColor = mckenzieFeedback ? '#FF0000' : '#00FF00';
+      
+      if (!mckenzieFeedback) {
+        setHoldTimer(prev => prev + 1);
+        if (holdTimer > 90) {
+          setRepCount(prev => prev + 1);
+          setHoldTimer(0);
+          speakFeedback("Good rep! Slowly lower down and prepare for next press-up");
         }
-        setPostureFeedback(pelvicTiltFeedback || `Hold tilt. ${Math.floor(holdTimer/30)} seconds`);
-        break;
-
-      case 'bridging':
-        const bridgingFeedback = calculateBridgingAccuracy(landmarks);
-        if (!bridgingFeedback) {
-          setHoldTimer(prev => prev + 1);
-          if (holdTimer > 90) {
-            setRepCount(prev => prev + 1);
-            setHoldTimer(0);
-            speakFeedback("Good rep! Lower your hips slowly");
-          }
+      }
+      setPostureFeedback(mckenzieFeedback || `Hold position. ${Math.floor(holdTimer/30)} seconds`);
+    } 
+    else if (exerciseMode === 'bridging') {
+      const bridgingFeedback = calculateBridgingAccuracy(landmarks);
+      connectionColor = bridgingFeedback ? '#FF0000' : '#00FF00';
+      landmarkColor = bridgingFeedback ? '#FF0000' : '#00FF00';
+      
+      if (!bridgingFeedback) {
+        setHoldTimer(prev => prev + 1);
+        if (holdTimer > 90) {
+          setRepCount(prev => prev + 1);
+          setHoldTimer(0);
+          speakFeedback("Good rep! Lower your hips slowly");
         }
-        setPostureFeedback(bridgingFeedback || `Hold bridge. ${Math.floor(holdTimer/30)} seconds`);
-        break;
-
-      default: // posture mode
-        if(goodPosture && results.poseLandmarks){
-          const feedback = getPostureFeedback(landmarks, goodPosture);
-          setPostureFeedback(feedback);
-          
-          if (feedback.includes("Great posture!")) {
-            changeStyleProperty('--posture-status',"'GOOD'");
-            badPostureCount = 0;
-          } else {
-            changeStyleProperty('--posture-status',"'NEEDS IMPROVEMENT'");
-            badPostureCount++;
-          }
-        }
+      }
+      setPostureFeedback(bridgingFeedback || `Hold bridge. ${Math.floor(holdTimer/30)} seconds`);
     }
+    else if (goodPosture && results.poseLandmarks) {
+      const feedback = getPostureFeedback(landmarks, goodPosture);
+      setPostureFeedback(feedback);
+      
+      if (feedback.includes("Great posture!")) {
+        connectionColor = '#00FF00';
+        landmarkColor = '#00FF00';
+        changeStyleProperty('--posture-status',"'GOOD'");
+        badPostureCount = 0;
+      } else {
+        connectionColor = '#FF0000';
+        landmarkColor = '#FF0000';
+        changeStyleProperty('--posture-status',"'NEEDS IMPROVEMENT'");
+        badPostureCount++;
+      }
+    }
+
+    // Draw the skeleton with the determined colors
+    drawConnectors(canvasCtx, results.poseLandmarks, mediapipePose.POSE_CONNECTIONS,
+                   {color: connectionColor, lineWidth: 4});
+    drawLandmarks(canvasCtx, results.poseLandmarks,
+                  {color: landmarkColor, lineWidth: 2});
+    canvasCtx.restore();
 
     if(btnSelected){
       goodPosture = landmarks; //obtain a copy of the "good pose"
@@ -401,10 +434,10 @@ function App() {
                   Posture
                 </button>
                 <button 
-                  onClick={() => {setExerciseMode('pelvictilt'); setRepCount(0);}}
-                  className={`px-4 py-2 rounded ${exerciseMode === 'pelvictilt' ? 'bg-neon-blue text-deep-space' : 'bg-deep-space text-neon-blue border border-neon-blue'}`}
+                  onClick={() => {setExerciseMode('mckenzie'); setRepCount(0);}}
+                  className={`px-4 py-2 rounded ${exerciseMode === 'mckenzie' ? 'bg-neon-blue text-deep-space' : 'bg-deep-space text-neon-blue border border-neon-blue'}`}
                 >
-                  Pelvic Tilt
+                  McKenzie Press-Up
                 </button>
                 <button 
                   onClick={() => {setExerciseMode('bridging'); setRepCount(0);}}
@@ -459,7 +492,7 @@ function App() {
               className="canvas absolute top-0 left-0 rounded-3xl w-full h-full z-20"
             />
             <div className="absolute top-4 left-4 bg-deep-space bg-opacity-70 text-neon-blue px-3 py-1 rounded-full text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">
-              {exerciseMode === 'posture' ? 'Posture Mode' : `${exerciseMode === 'pelvictilt' ? 'Pelvic Tilt' : 'Bridging'} Exercise`}
+              {exerciseMode === 'posture' ? 'Posture Mode' : `${exerciseMode === 'mckenzie' ? 'McKenzie Press-Up' : 'Bridging'} Exercise`}
             </div>
             {postureFeedback && (
               <div className="absolute bottom-4 left-4 right-4 bg-deep-space bg-opacity-70 text-neon-green px-3 py-2 rounded-lg text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">

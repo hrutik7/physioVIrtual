@@ -27,15 +27,9 @@ export function Menu(props) {
   };
 
   return (
-    <div className="menu bg-deep-space bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-3xl p-6 sm:p-8 mb-4 sm:mb-8 w-full  mx-auto border border-neon-blue border-opacity-30">
-      <div className="flex items-center justify-center mb-6">
-        <img
-          src={logo}
-          className="w-20 h-20 sm:w-24 sm:h-24 animate-pulse-slow rounded-full"
-          alt="logo"
-        />
-      </div>
-      <MenuHeader state={state} />
+    <div className="menu bg-deep-space bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-3xl p-6 sm:p-8 mb-4 sm:mb-8 w-full border border-neon-blue border-opacity-30">
+      
+      {/* <MenuHeader state={state} /> */}
       <PostureStatus state={state} />
       <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
         <CalibrateBtn state={state} onClickCallback={calibratePose} />

@@ -18,6 +18,188 @@ import {
   backStraight
 } from './utils/utilities'
 
+// Dashboard Component
+function Dashboard({ exerciseMode, repCount, postureFeedback }) {
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl text-neon-blue mb-6">Dashboard</h2>
+      
+      {/* Exercise Stats Card */}
+      <div className="bg-deep-space rounded-xl p-6 mb-6">
+        <h3 className="text-xl text-neon-blue mb-4">Exercise Statistics</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-space-gray p-4 rounded-lg">
+            <p className="text-neon-green text-sm">Current Exercise</p>
+            <p className="text-neon-blue text-lg">{exerciseMode}</p>
+          </div>
+          <div className="bg-space-gray p-4 rounded-lg">
+            <p className="text-neon-green text-sm">Repetitions</p>
+            <p className="text-neon-blue text-lg">{repCount}/10</p>
+          </div>
+          <div className="bg-space-gray p-4 rounded-lg">
+            <p className="text-neon-green text-sm">Posture Status</p>
+            <p className={`text-lg ${postureFeedback?.includes("Great") ? "text-green-400" : "text-red-400"}`}>
+              {postureFeedback?.includes("Great") ? "Good" : "Needs Improvement"}
+            </p>
+          </div>
+          <div className="bg-space-gray p-4 rounded-lg">
+            <p className="text-neon-green text-sm">Session Duration</p>
+            <p className="text-neon-blue text-lg">00:15:30</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-deep-space rounded-xl p-6">
+        <h3 className="text-xl text-neon-blue mb-4">Recent Activity</h3>
+        <div className="space-y-4">
+          <div className="bg-space-gray p-4 rounded-lg">
+            <p className="text-neon-green">Last Exercise: {exerciseMode}</p>
+            <p className="text-neon-blue">Completed Reps: {repCount}</p>
+            <p className="text-sm text-gray-400">2 minutes ago</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Virtual Assistant Component
+function VirtualAssistant({ exerciseMode, postureFeedback, onModeChange }) {
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl text-neon-blue mb-6">Virtual Assistant</h2>
+      
+      {/* Exercise Selection */}
+      <div className="bg-deep-space rounded-xl p-6 mb-6">
+        <h3 className="text-xl text-neon-blue mb-4">Exercise Selection</h3>
+        <div className="space-y-3">
+          <button 
+            onClick={() => onModeChange('posture')}
+            className={`w-full p-3 rounded-lg ${exerciseMode === 'posture' ? 'bg-neon-blue text-deep-space' : 'bg-space-gray text-neon-blue'}`}
+          >
+            Posture Check
+          </button>
+          <button 
+            onClick={() => onModeChange('mckenzie')}
+            className={`w-full p-3 rounded-lg ${exerciseMode === 'mckenzie' ? 'bg-neon-blue text-deep-space' : 'bg-space-gray text-neon-blue'}`}
+          >
+            McKenzie Press-Up
+          </button>
+          <button 
+            onClick={() => onModeChange('bridging')}
+            className={`w-full p-3 rounded-lg ${exerciseMode === 'bridging' ? 'bg-neon-blue text-deep-space' : 'bg-space-gray text-neon-blue'}`}
+          >
+            Bridging
+          </button>
+        </div>
+      </div>
+
+      {/* Current Feedback */}
+      <div className="bg-deep-space rounded-xl p-6">
+        <h3 className="text-xl text-neon-blue mb-4">Real-time Feedback</h3>
+        <div className="bg-space-gray p-4 rounded-lg">
+          <p className="text-neon-green">{postureFeedback}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Voice Assistant Component
+function VoiceAssistant({ postureFeedback }) {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const handleSpeak = (text) => {
+    if (!isSpeaking && text) {
+      setIsSpeaking(true);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const toggleListening = () => {
+    setIsListening(!isListening);
+    // Add speech recognition logic here
+  };
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl text-neon-blue mb-6">Voice Assistant</h2>
+      
+      {/* Voice Controls */}
+      <div className="bg-deep-space rounded-xl p-6 mb-6">
+        <h3 className="text-xl text-neon-blue mb-4">Voice Controls</h3>
+        <div className="space-y-4">
+          <button 
+            onClick={() => handleSpeak(postureFeedback)}
+            disabled={isSpeaking}
+            className={`w-full p-4 rounded-lg ${isSpeaking ? 'bg-gray-600' : 'bg-neon-blue'} text-deep-space`}
+          >
+            {isSpeaking ? 'Speaking...' : 'Speak Feedback'}
+          </button>
+          <button 
+            onClick={toggleListening}
+            className={`w-full p-4 rounded-lg ${isListening ? 'bg-red-500' : 'bg-space-gray'} text-neon-blue`}
+          >
+            {isListening ? 'Stop Listening' : 'Start Listening'}
+          </button>
+        </div>
+      </div>
+
+      {/* Voice Commands */}
+      <div className="bg-deep-space rounded-xl p-6">
+        <h3 className="text-xl text-neon-blue mb-4">Available Commands</h3>
+        <div className="space-y-2">
+          <div className="bg-space-gray p-3 rounded-lg">
+            <p className="text-neon-green">"Start exercise"</p>
+          </div>
+          <div className="bg-space-gray p-3 rounded-lg">
+            <p className="text-neon-green">"Switch to [exercise name]"</p>
+          </div>
+          <div className="bg-space-gray p-3 rounded-lg">
+            <p className="text-neon-green">"Read feedback"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Sidebar Component
+function Sidebar({ currentRoute, onRouteChange }) {
+  return (
+    <div className="bg-deep-space w-64 min-h-screen p-4">
+      <div className="mb-8">
+        <h1 className="text-neon-blue text-2xl font-bold">ErgoSmart</h1>
+      </div>
+      
+      <nav className="space-y-2">
+        <button 
+          onClick={() => onRouteChange('dashboard')}
+          className={`w-full p-3 rounded-lg text-left ${currentRoute === 'dashboard' ? 'bg-neon-blue text-deep-space' : 'text-neon-blue hover:bg-space-gray'}`}
+        >
+          📊 Dashboard
+        </button>
+        <button 
+          onClick={() => onRouteChange('virtual-assistant')}
+          className={`w-full p-3 rounded-lg text-left ${currentRoute === 'virtual-assistant' ? 'bg-neon-blue text-deep-space' : 'text-neon-blue hover:bg-space-gray'}`}
+        >
+          🤖 Virtual Assistant
+        </button>
+        <button 
+          onClick={() => onRouteChange('voice-assistant')}
+          className={`w-full p-3 rounded-lg text-left ${currentRoute === 'voice-assistant' ? 'bg-neon-blue text-deep-space' : 'text-neon-blue hover:bg-space-gray'}`}
+        >
+          🎤 Voice Assistant
+        </button>
+      </nav>
+    </div>
+  );
+}
+
 function App() {
   //reference to canvas & webcam
   const canvasRef = useRef(null);
@@ -38,6 +220,7 @@ function App() {
   const [repCount, setRepCount] = useState(0);
   const [exerciseState, setExerciseState] = useState('start'); // 'start', 'hold', 'return'
   const [holdTimer, setHoldTimer] = useState(0);
+  const [currentRoute, setCurrentRoute] = useState('dashboard');
 
   function getPostureFeedback(landmarks, goodPosture) {
     let feedback = [];
@@ -414,91 +597,98 @@ function App() {
 
   }, []);
   
+  const handleModeChange = (mode) => {
+    setExerciseMode(mode);
+    setRepCount(0);
+  };
+
+  // Render the current route content
+  const renderRouteContent = () => {
+    switch(currentRoute) {
+      case 'dashboard':
+        return <Dashboard 
+          exerciseMode={exerciseMode}
+          repCount={repCount}
+          postureFeedback={postureFeedback}
+        />;
+      case 'virtual-assistant':
+        return <VirtualAssistant 
+          exerciseMode={exerciseMode}
+          postureFeedback={postureFeedback}
+          onModeChange={handleModeChange}
+        />;
+      case 'voice-assistant':
+        return <VoiceAssistant 
+          postureFeedback={postureFeedback}
+        />;
+      default:
+        return <Dashboard 
+          exerciseMode={exerciseMode}
+          repCount={repCount}
+          postureFeedback={postureFeedback}
+        />;
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
       {!loaded && <LoadingScreen />}
-      <div className={`flex-grow App bg-gradient-to-br from-deep-space to-space-gray flex flex-col items-center justify-center p-4 sm:p-8 ${!loaded ? 'hidden' : ''}`}>
-        <div className="w-full max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-center space-y-8 xl:space-y-0 xl:space-x-8">
-          <div className="flex flex-col space-y-4">
-            <Menu
-              postureRef={postureRef}
-            />
-            <div className="bg-deep-space p-4 rounded-xl">
-              <h2 className="text-neon-blue text-xl mb-4">Exercise Mode</h2>
-              <div className="flex space-x-4">
-                <button 
-                  onClick={() => {setExerciseMode('posture'); setRepCount(0);}}
-                  className={`px-4 py-2 rounded ${exerciseMode === 'posture' ? 'bg-neon-blue text-deep-space' : 'bg-deep-space text-neon-blue border border-neon-blue'}`}
-                >
-                  Posture
-                </button>
-                <button 
-                  onClick={() => {setExerciseMode('mckenzie'); setRepCount(0);}}
-                  className={`px-4 py-2 rounded ${exerciseMode === 'mckenzie' ? 'bg-neon-blue text-deep-space' : 'bg-deep-space text-neon-blue border border-neon-blue'}`}
-                >
-                  McKenzie Press-Up
-                </button>
-                <button 
-                  onClick={() => {setExerciseMode('bridging'); setRepCount(0);}}
-                  className={`px-4 py-2 rounded ${exerciseMode === 'bridging' ? 'bg-neon-blue text-deep-space' : 'bg-deep-space text-neon-blue border border-neon-blue'}`}
-                >
-                  Bridging
-                </button>
-              </div>
-              {exerciseMode !== 'posture' && (
-                <>
-                  <div className="mt-4 text-neon-green">
-                    Reps completed: {repCount}
-                  </div>
-                  {getExerciseInstructions() && (
-                    <div className="mt-6 text-neon-blue">
-                      <h3 className="text-lg font-semibold mb-2">{getExerciseInstructions().title}</h3>
-                      <p className="text-sm mb-4 text-neon-green">{getExerciseInstructions().description}</p>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-md font-semibold mb-2">Steps:</h4>
-                        <ol className="list-decimal list-inside space-y-2 text-sm">
-                          {getExerciseInstructions().steps.map((step, index) => (
-                            <li key={index} className="text-neon-blue">{step}</li>
-                          ))}
-                        </ol>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-md font-semibold mb-2">Important Tips:</h4>
-                        <ul className="list-disc list-inside space-y-2 text-sm">
-                          {getExerciseInstructions().tips.map((tip, index) => (
-                            <li key={index} className="text-neon-green">{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
+      <div className="flex">
+        <Sidebar 
+          currentRoute={currentRoute}
+          onRouteChange={setCurrentRoute}
+        />
+        <div className="flex-grow">
+          {renderRouteContent()}
+          <div className={`App bg-gradient-to-br from-deep-space to-space-gray flex flex-col items-center justify-center p-4 sm:p-8 ${!loaded ? 'hidden' : ''}`}>
+            <div className="w-full max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-center space-y-8 xl:space-y-0 xl:space-x-8">
+              <div className="flex flex-col space-y-4">
+                <Menu postureRef={postureRef} />
+                {exerciseMode !== 'posture' && getExerciseInstructions() && (
+                  <div className="bg-deep-space p-4 rounded-xl">
+                    <h3 className="text-lg font-semibold mb-2 text-neon-blue">{getExerciseInstructions().title}</h3>
+                    <p className="text-sm mb-4 text-neon-green">{getExerciseInstructions().description}</p>
+                    <div className="mb-4">
+                      <h4 className="text-md font-semibold mb-2 text-neon-blue">Steps:</h4>
+                      <ol className="list-decimal list-inside space-y-2 text-sm">
+                        {getExerciseInstructions().steps.map((step, index) => (
+                          <li key={index} className="text-neon-blue">{step}</li>
+                        ))}
+                      </ol>
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          <div className="display relative rounded-3xl overflow-hidden w-full max-w-lg xl:max-w-xl bg-deep-space">
-            <div className="absolute inset-0 bg-gradient-to-r from-neon-blue to-neon-green opacity-5 z-10"></div>
-            <Webcam
-              ref={webcamRef}
-              className="webcam rounded-3xl w-full opacity-90"
-              width="100%"
-              height="auto"
-            />
-            <canvas
-              ref={canvasRef}
-              className="canvas absolute top-0 left-0 rounded-3xl w-full h-full z-20"
-            />
-            <div className="absolute top-4 left-4 bg-deep-space bg-opacity-70 text-neon-blue px-3 py-1 rounded-full text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">
-              {exerciseMode === 'posture' ? 'Posture Mode' : `${exerciseMode === 'mckenzie' ? 'McKenzie Press-Up' : 'Bridging'} Exercise`}
-            </div>
-            {postureFeedback && (
-              <div className="absolute bottom-4 left-4 right-4 bg-deep-space bg-opacity-70 text-neon-green px-3 py-2 rounded-lg text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">
-                {postureFeedback}
+                    <div>
+                      <h4 className="text-md font-semibold mb-2 text-neon-blue">Important Tips:</h4>
+                      <ul className="list-disc list-inside space-y-2 text-sm">
+                        {getExerciseInstructions().tips.map((tip, index) => (
+                          <li key={index} className="text-neon-green">{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+              <div className="display relative rounded-3xl overflow-hidden w-full max-w-lg xl:max-w-xl bg-deep-space">
+                <div className="absolute inset-0 bg-gradient-to-r from-neon-blue to-neon-green opacity-5 z-10"></div>
+                <Webcam
+                  ref={webcamRef}
+                  className="webcam rounded-3xl w-full opacity-90"
+                  width="100%"
+                  height="auto"
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="canvas absolute top-0 left-0 rounded-3xl w-full h-full z-20"
+                />
+                <div className="absolute top-4 left-4 bg-deep-space bg-opacity-70 text-neon-blue px-3 py-1 rounded-full text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">
+                  {exerciseMode === 'posture' ? 'Posture Mode' : `${exerciseMode === 'mckenzie' ? 'McKenzie Press-Up' : 'Bridging'} Exercise`}
+                </div>
+                {postureFeedback && (
+                  <div className="absolute bottom-4 left-4 right-4 bg-deep-space bg-opacity-70 text-neon-green px-3 py-2 rounded-lg text-sm font-medium z-30 backdrop-filter backdrop-blur-sm">
+                    {postureFeedback}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
